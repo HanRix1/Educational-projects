@@ -1,0 +1,15 @@
+[project]
+name = "Database-design"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "HanRix1", email = "HanRix1@mail.ru"},
+]
+dependencies = ["sqlalchemy>=2.0.37", "pydantic>=2.10.5", "pydantic-settings>=2.7.1", "alembic>=1.14.0", "asyncpg>=0.30.0", "psycopg2>=2.9.10"]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
