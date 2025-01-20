@@ -1,0 +1,24 @@
+import requests
+from bs4 import BeautifulSoup
+
+
+def latest_bulletin_from_auction() -> str:
+    page_url = 'https://spimex.com/markets/oil_products/trades/results/'
+    response = requests.get(page_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        traiding_results = soup.find('a', class_='accordeon-inner__item-title link xls')
+        file_url = str(traiding_results)[54:111]
+    else:
+        raise requests.exceptions.HTTPError("Неверный url или ошибки на строне сервера")
+    return file_url
+
+def upload_file(file_url: str, file_resolution: str, file_name: str) -> None:
+    response = requests.get(file_url)
+    if response.status_code == 200:
+        with open(f'{file_name}.{file_resolution}', 'wb') as file:
+            file.write(response.content)
+    else:
+        raise requests.exceptions.HTTPError("Неверный url или ошибки на строне сервера")
+    
+
