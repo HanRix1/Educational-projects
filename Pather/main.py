@@ -1,7 +1,7 @@
-from asyncio import to_thread
+import time
 import asyncio
-from datetime import datetime
 import pandas as pd
+from datetime import datetime 
 from sqlalchemy import select
 from db.base import async_session
 
@@ -12,18 +12,16 @@ from pather.parther import latest_bulletin_from_auction, upload_file
 file_resolution = "xlsx"
 file_name = "bulletin"
 
-# file_url = "https://spimex.com" + latest_bulletin_from_auction()
-# upload_file(file_url, file_resolution, file_name)
 
 def process_bulletin_data(file_name: str, file_resolution: str) -> tuple[DataFrame, datetime]:
-    df = pd.read_excel(f'{file_name}.{file_resolution}')
+    df = pd.read_excel(f'{file_name}.{file_resolution}')  #function
   
     date = df['Форма СЭТ-БТ'].values[2]
-    date = datetime.strptime(date.split(":")[1].strip(), '%d.%m.%Y').date()
+    date = datetime.strptime(date.split(":")[1].strip(), '%d.%m.%Y').date() #function
   
-    df['Unnamed: 14'] = pd.to_numeric(df['Unnamed: 14'], errors='coerce')
-    df = df[df['Unnamed: 14'].notna()].drop(df.index[-2:])
-    df['Unnamed: 14'] = df['Unnamed: 14'].astype('Int64')
+    df['Unnamed: 14'] = pd.to_numeric(df['Unnamed: 14'], errors='coerce') #function
+    df = df[df['Unnamed: 14'].notna()].drop(df.index[-2:]) #function
+    df['Unnamed: 14'] = df['Unnamed: 14'].astype('Int64') #function
     df = df.drop(columns=[
         'Unnamed: 0',
         'Unnamed: 6',
@@ -34,13 +32,13 @@ def process_bulletin_data(file_name: str, file_resolution: str) -> tuple[DataFra
         'Unnamed: 11',
         'Unnamed: 12',
         'Unnamed: 13',
-        ])
+        ]) #function
     return df, date 
 
 
 async def upload_traiding_results(df: DataFrame, date: datetime) -> None:
     res = []
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         res.append(
             SpimexTradingResults(
                 exchange_product_id=row['Форма СЭТ-БТ'],
@@ -69,25 +67,14 @@ async def get_traiding_results():
 
 
 async def main():
-    df, date = await to_thread(process_bulletin_data, file_name, file_resolution)
+    start_time = time.time()
+    file_url = "https://spimex.com" + await latest_bulletin_from_auction()
+    await upload_file(file_url, file_resolution, file_name)
+    df, date = await asyncio.to_thread(process_bulletin_data, file_name, file_resolution)
     data = await get_traiding_results()
-    for el in data:
-        print(
-            el.id,
-            el.exchange_product_id,
-            el.exchange_product_name,
-            el.oil_id,
-            el.delivery_basis_id,
-            el.delivery_basis_name,
-            el.delivery_type_id,
-            el.volume,
-            el.total,
-            el.count,
-            el.date,
-            sep="\n",
-            end="\n\n"
-        )
-    # await upload_traiding_results(df, date)
+    await upload_traiding_results(df, date)
+    elapsed_time = time.time() - start_time
+    print(f"Время выполнения функции: {elapsed_time:.4f} секунд")
 
 
 if __name__ == "__main__":
